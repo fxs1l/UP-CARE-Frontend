@@ -220,6 +220,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 className="h-auto w-full object-contain"
                 src="/upcare-logo.webp"
                 alt="UP CARE Logo"
+                priority
                 width="500"
                 height="150"
               />

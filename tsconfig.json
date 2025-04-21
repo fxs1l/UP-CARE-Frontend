@@ -21,10 +21,12 @@
     "paths": {
       "@/*": ["./src/*"],
       "@/components/*": ["./src/components/*"],
+      "@/layouts/*": ["./src/components/layouts/*"],
       "@/hooks/*": ["./src/hooks/*"],
       "@/lib/*": ["./src/lib/*"],
       "@/database/*": ["./src/lib/database/*"],
-      "@/interfaces/*": ["./src/lib/interfaces/*"]
+      "@/interfaces/*": ["./src/lib/interfaces/*"],
+      "@/providers/*": ["./src/providers/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

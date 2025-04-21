@@ -1,5 +1,5 @@
 export default interface SensorDataPoint {
-  time: string | number | Date;
+  time: number; // milliseconds since epoch
   source: string;
   value: number;
   parameter: string;

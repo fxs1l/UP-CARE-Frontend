@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from "@/components/ui/sonner";
+import SideBarLayout from "@/layouts/sidebar-layout";
+import { SWRProvider } from "@/providers/swr-provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,7 +30,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <SWRProvider>
+          <SideBarLayout>
+            {children}
+            <Toaster />
+          </SideBarLayout>
+        </SWRProvider>
       </body>
     </html>
   );

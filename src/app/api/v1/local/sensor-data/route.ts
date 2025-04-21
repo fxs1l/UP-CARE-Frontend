@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   try {
 
     const { searchParams } = new URL(request.url)
-    const startTime = searchParams.get('startTime') || "-7d";
+    const startTime = searchParams.get('startTime') || "-90d";
     const stopTime = searchParams.get('stopTime');
     const range = flux`|> range(start: ${fluxDuration(startTime)}, stop: ${fluxDuration(stopTime)})`
 
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     const points: SensorDataPoint[] = rows.map((row) => {
       const dataPoint = row as Record<string, never>;
       return {
-        date: dataPoint._time,
+        time: Date.parse(dataPoint._time),
         source: dataPoint.source,
         value: dataPoint._value,
         sensorModel: dataPoint.sensor_model,
