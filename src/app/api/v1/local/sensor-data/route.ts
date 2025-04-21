@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { flux, fluxDuration, HttpError } from '@influxdata/influxdb-client'
 import influxQueryApi from '@/database/influxdb'
 import { influxBucket } from '@/lib/database/config'
-import SensorDataPoint from '@/interfaces/sensorDataPoint'
+import SensorDataPoint from '@/lib/interfaces/sensor-data-point'
 
 export async function GET(request: Request) {
   try {
@@ -16,21 +16,17 @@ export async function GET(request: Request) {
     ${range}
     |> filter(fn: (r) => r._measurement == "sensor_readings")`
 
-    console.log('fluxQuery:', fluxQuery)
-
-    const points: SensorDataPoint[] = []
-    for await (const { values, tableMeta } of influxQueryApi.iterateRows(fluxQuery)) {
-      const dataPoint = tableMeta.toObject(values)
-      const formattedPoint: SensorDataPoint = {
-        time: dataPoint._time,
+    const rows = await influxQueryApi.collectRows(fluxQuery)
+    const points: SensorDataPoint[] = rows.map((row) => {
+      const dataPoint = row as Record<string, never>;
+      return {
+        date: dataPoint._time,
         source: dataPoint.source,
         value: dataPoint._value,
         sensorModel: dataPoint.sensor_model,
         parameter: dataPoint.parameter,
-      }
-      points.push(formattedPoint);
-    }
-    console.log('Data Points:', points[0])
+      };
+    });
 
     return NextResponse.json(points)
   } catch (e: unknown) {
