@@ -34,7 +34,7 @@ import { randomUUID } from "crypto";
 // export const description = "An interactive area chart";
 
 type ChartAreaInteractiveProps = {
-  data: any[];
+  data: { [key: string]: number; time: number }[];
   chartConfig: ChartConfig;
   title: string;
   description?: string;
@@ -51,7 +51,7 @@ export function ChartAreaInteractive(props: ChartAreaInteractiveProps) {
     }
   }, [isMobile]);
 
-  const filteredData = data.filter((item) => {
+  const filteredData = data.filter((item: { time: string | number | Date }) => {
     const date = new Date(item.time);
     const referenceDate = new Date();
     let daysToSubtract = 90;
@@ -130,13 +130,6 @@ export function ChartAreaInteractive(props: ChartAreaInteractiveProps) {
             <AreaChart data={filteredData}>
               <defs>
                 {uniqueKeys.map((key, index) => {
-                  console.log("key", key);
-                  console.log("chartConfig", chartConfig);
-                  console.log("chartConfig[key]", chartConfig[key]);
-                  console.log(
-                    "chartConfig[key]?.color",
-                    chartConfig[key]?.color,
-                  );
                   return (
                     <linearGradient
                       id={`gradient-${key}`}

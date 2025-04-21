@@ -58,7 +58,7 @@ export default function DashboardPage() {
         d.source === "AQ NODE 4",
     )
 
-    ?.filter(({ time }) => {
+    ?.filter(({ time }: SensorDataPoint) => {
       const date = new Date(time);
       return (
         date.getFullYear() === 2025 &&
