@@ -79,7 +79,7 @@ export function ChartAreaInteractive(props: ChartAreaInteractiveProps) {
         <CardDescription>
           <span className="hidden @[540px]/card:block">
             {description}
-            Total from all nodes for the last 3 months
+            {/* Total from all nodes for the last 3 months */}
           </span>
           <span className="@[540px]/card:hidden">Last 3 months</span>
         </CardDescription>
@@ -210,10 +210,9 @@ export function ChartAreaInteractive(props: ChartAreaInteractiveProps) {
                   <Area
                     key={crypto.randomUUID()}
                     dataKey={key}
-                    type="natural"
+                    type="monotone"
                     fill={`url(#gradient-${key})`}
-                    // fill="white"
-                    fillOpacity={0.2}
+                    fillOpacity={0.1}
                     stroke={color}
                     strokeWidth={2.5}
                     stackId="a"
@@ -223,7 +222,7 @@ export function ChartAreaInteractive(props: ChartAreaInteractiveProps) {
               <ChartLegend content={<ChartLegendContent />} />
             </AreaChart>
           ) : (
-            <div className="bg-muted/50 text-md flex h-full items-center justify-center rounded-sm border-1">
+            <div className="text-md *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card flex h-full items-center justify-center rounded-sm border-1 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs">
               No data available
             </div>
           )}
