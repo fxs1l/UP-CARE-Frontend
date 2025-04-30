@@ -22,6 +22,13 @@ export async function GET(request: Request) {
     const fluxQuery = flux`from(bucket:${influxBucket})
     ${range}
     |> filter(fn: (r) => r._measurement == "sensor_readings")
+    |> filter(fn: (r) => r["_field"] == "value")
+    |> filter(fn: (r) =>
+      r["source"] == "AQ NODE 1" or
+      r["source"] == "AQ NODE 2" or
+      r["source"] == "AQ NODE 3" or
+      r["source"] == "AQ NODE 4"
+    )
     ${parameter ? parameterFilter : ''}`
 
     const rows = await influxQueryApi.collectRows(fluxQuery)

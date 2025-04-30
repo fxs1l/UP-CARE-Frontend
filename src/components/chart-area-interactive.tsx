@@ -203,7 +203,6 @@ const ChartAreaInteractive = (props: ChartAreaInteractiveProps) => {
               />
               <ChartTooltip
                 cursor
-                defaultIndex={isMobile ? -1 : 10}
                 content={
                   <ChartTooltipContent
                     labelClassName="font-mono"
