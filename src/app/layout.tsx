@@ -33,7 +33,7 @@ export default function RootLayout({
         <SWRProvider>
           <SideBarLayout>
             {children}
-            <Toaster />
+            <Toaster richColors />
           </SideBarLayout>
         </SWRProvider>
       </body>

@@ -6,37 +6,32 @@ import SensorDataPoint from "@/lib/interfaces/sensor-data-point";
 import { toast } from "sonner";
 
 async function fetcher(url: string): Promise<SensorDataPoint[]> {
-  try {
-    const fetchPromise = fetch(url).then(async (response) => {
-      if (!response.ok) {
-        throw new Error("Failed to fetch");
-      }
-      return response.json();
-    });
+  const urlObj = new URL(url, window.location.origin);
+  const parameter = urlObj.searchParams.get("parameter") || "unknown";
 
-    toast.promise(fetchPromise, {
-      loading: "Fetching data...",
-      success: (data: SensorDataPoint[]) => {
-        return {
-          message: "Data fetched successfully!",
-          description: `Fetched ${data.length} data points`,
-        };
-      },
-      error: (error) => {
-        return {
-          message: "Something went wrong",
-          description: error.message,
-        };
-      },
-    });
+  const fetchPromise = fetch(url).then(async (response) => {
+    return response.json();
+  });
 
-    const data = (await fetchPromise) as SensorDataPoint[];
+  toast.promise(fetchPromise, {
+    loading: `Fetching data for ${parameter}...`,
+    success: (data: SensorDataPoint[]) => {
+      return {
+        message: `Data fetched successfully! for ${parameter}`,
+        description: `Fetched ${data.length} data points`,
+      };
+    },
+    error: (error) => {
+      return {
+        message: `Something went wrong while fetching ${parameter}`,
+        description: error.message,
+      };
+    },
+  });
 
-    return data;
-  } catch (error) {
-    console.error("Error fetching data:", error);
-    return [];
-  }
+  const data = (await fetchPromise) as SensorDataPoint[];
+
+  return data;
 }
 
 const swrOptions = {
