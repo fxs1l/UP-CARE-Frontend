@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { flux, fluxDuration, HttpError } from '@influxdata/influxdb-client'
+import { flux, HttpError } from '@influxdata/influxdb-client'
 import influxQueryApi from '@/database/influxdb'
 import { influxBucket } from '@/lib/database/config'
 import SensorDataPoint from '@/lib/interfaces/sensor-data-point'
@@ -22,7 +22,17 @@ export async function GET(request: Request) {
     const fluxQuery = flux`from(bucket:${influxBucket})
     ${range}
     |> filter(fn: (r) => r._measurement == "sensor_readings")
-    ${parameter ? parameterFilter : ''}`
+    |> filter(fn: (r) => r["_field"] == "value")
+    |> filter(fn: (r) =>
+      r["source"] == "AQ NODE 1" or
+      r["source"] == "AQ NODE 2" or
+      r["source"] == "AQ NODE 3" or
+      r["source"] == "AQ NODE 4"
+    )
+    ${parameter ? parameterFilter : ''}
+    |> aggregateWindow(every: 1m, fn: mean, createEmpty: false)
+    |> group(columns: ["_time"])
+    |> mean()`
 
     const rows = await influxQueryApi.collectRows(fluxQuery)
     const points: SensorDataPoint[] = rows.map((row) => {
