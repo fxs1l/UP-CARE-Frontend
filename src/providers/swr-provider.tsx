@@ -17,7 +17,7 @@ async function fetcher(url: string): Promise<SensorDataPoint[]> {
     loading: `Fetching data for ${parameter}...`,
     success: (data: SensorDataPoint[]) => {
       return {
-        message: `Data fetched successfully! for ${parameter}`,
+        message: `Data fetched successfully for ${parameter}!`,
         description: `Fetched ${data.length} data points`,
       };
     },

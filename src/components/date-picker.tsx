@@ -135,6 +135,8 @@ export function DateRangePicker(props: DateRangePickerProps) {
         <PopoverContent
           className="flex w-auto flex-col items-center sm:flex-row"
           align="end"
+          avoidCollisions
+          collisionPadding={8}
         >
           <Calendar
             initialFocus

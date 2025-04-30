@@ -108,7 +108,7 @@ const ChartAreaInteractive = (props: ChartAreaInteractiveProps) => {
           <span className="@[540px]/card:hidden">Last 3 months</span>
         </CardDescription>
         <CardAction>
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="flex max-w-[50vw] flex-wrap items-center justify-end gap-2 sm:max-w-full">
             <DateRangePicker onDateChange={handleDateChange} />
             {dataSources.length > 1 && (
               <Select value={selectedSource} onValueChange={setSelectedSource}>
