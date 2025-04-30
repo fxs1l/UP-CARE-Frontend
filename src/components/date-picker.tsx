@@ -107,7 +107,7 @@ export function DateRangePicker(props: DateRangePickerProps) {
   const allPresets = presets ?? defaultPresets;
 
   return (
-    <div className={cn("inline-flex", className)}>
+    <div className={cn("inline-flex justify-end", className)}>
       <Popover>
         <PopoverTrigger asChild>
           <Button
@@ -148,7 +148,7 @@ export function DateRangePicker(props: DateRangePickerProps) {
             numberOfMonths={numberOfMonths}
           />
           <div className="p-4">
-            <h4 className="scroll-m-20 py-2 text-lg font-semibold tracking-tight">
+            <h4 className="text-md scroll-m-20 py-2 font-semibold tracking-tight">
               Presets
             </h4>
             <div className="flex max-w-[200px] flex-wrap gap-2">

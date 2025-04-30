@@ -108,8 +108,11 @@ const ChartAreaInteractive = (props: ChartAreaInteractiveProps) => {
           <span className="@[540px]/card:hidden">Last 3 months</span>
         </CardDescription>
         <CardAction>
-          <div className="flex max-w-[50vw] flex-wrap items-center justify-end gap-2 sm:max-w-full">
-            <DateRangePicker onDateChange={handleDateChange} />
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <DateRangePicker
+              onDateChange={handleDateChange}
+              className="w-full sm:w-auto"
+            />
             {dataSources.length > 1 && (
               <Select value={selectedSource} onValueChange={setSelectedSource}>
                 <SelectTrigger className="w-auto">
@@ -136,7 +139,7 @@ const ChartAreaInteractive = (props: ChartAreaInteractiveProps) => {
           className="aspect-auto h-[250px] w-full"
         >
           {hasData ? (
-            <AreaChart className="ml-0 pl-0" data={filteredData}>
+            <AreaChart data={filteredData}>
               <defs>
                 {uniqueKeys.map((key, index) => {
                   return (
@@ -240,7 +243,7 @@ const ChartAreaInteractive = (props: ChartAreaInteractiveProps) => {
               <ChartLegend content={<ChartLegendContent />} />
             </AreaChart>
           ) : (
-            <div className="text-md *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card flex h-full items-center justify-center rounded-sm border-1 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs">
+            <div className="text-md bg-accent flex h-full items-center justify-center rounded-sm border-1 text-center">
               No data available. Choose a different date range.
             </div>
           )}
