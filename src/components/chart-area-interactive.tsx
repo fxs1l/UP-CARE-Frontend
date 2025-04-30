@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { memo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -23,102 +23,111 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import SensorDataPoint from "@/lib/interfaces/sensor-data-point";
-import { randomUUID } from "crypto";
 
-// export const description = "An interactive area chart";
+import { DateRangePicker } from "./date-picker";
+import { DateRange } from "react-day-picker";
+
+type DataItem = {
+  [key: string]: number;
+  time: number;
+};
+
+type DataSource = {
+  label: string;
+  data: DataItem[];
+  unit?: string;
+};
 
 type ChartAreaInteractiveProps = {
-  data: { [key: string]: number; time: number }[];
+  dataSources: DataSource[];
   chartConfig: ChartConfig;
   title: string;
   description?: string;
 };
 
-export function ChartAreaInteractive(props: ChartAreaInteractiveProps) {
-  const { data, chartConfig, title, description } = props;
+const ChartAreaInteractive = (props: ChartAreaInteractiveProps) => {
+  const { dataSources, chartConfig, title, description = "" } = props;
   const isMobile = useIsMobile();
-  const [timeRange, setTimeRange] = React.useState("90d");
-
-  React.useEffect(() => {
-    if (isMobile) {
-      setTimeRange("1d");
-    }
-  }, [isMobile]);
-
-  const filteredData = data.filter((item: { time: string | number | Date }) => {
-    const date = new Date(item.time);
-    const referenceDate = new Date();
-    let daysToSubtract = 90;
-    if (timeRange === "30d") {
-      daysToSubtract = 30;
-    } else if (timeRange === "7d") {
-      daysToSubtract = 7;
-    } else if (timeRange === "1d") {
-      daysToSubtract = 1;
-    }
-    const startDate = new Date(referenceDate);
-    startDate.setDate(startDate.getDate() - daysToSubtract);
-    return date >= startDate;
+  const [selectedSource, setSelectedSource] = useState<string>(
+    dataSources[0]?.label || "",
+  );
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(),
+    to: new Date(),
   });
 
+  const filterByDateRange = (
+    data: DataItem[],
+    range: DateRange | undefined,
+  ): DataItem[] => {
+    if (!range || !range.from || !range.to) {
+      return data;
+    }
+
+    const fromTime = range.from.getTime();
+    const toTime = range.to.getTime();
+
+    return data.filter((item) => {
+      const itemTime = new Date(item.time).getTime();
+      return itemTime >= fromTime && itemTime <= toTime;
+    });
+  };
+
+  const handleDateChange = (date: DateRange | undefined) => {
+    setDateRange(date);
+  };
+
+  const selectedDataSource = dataSources.find(
+    (source) => source.label === selectedSource,
+  );
+  const filteredData = filterByDateRange(
+    selectedDataSource?.data || [],
+    dateRange,
+  );
+  const hasData = filteredData && filteredData.length > 0;
   const uniqueKeys = Array.from(
     new Set(
-      data.flatMap((item) => Object.keys(item).filter((key) => key !== "time")),
+      filteredData.flatMap((item) =>
+        Object.keys(item).filter((key) => key !== "time"),
+      ),
     ),
   );
+
   return (
     <Card className="@container/card">
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         <CardDescription>
-          <span className="hidden @[540px]/card:block">
-            {description}
-            {/* Total from all nodes for the last 3 months */}
-          </span>
+          <span className="hidden @[540px]/card:block">{description}</span>
           <span className="@[540px]/card:hidden">Last 3 months</span>
         </CardDescription>
         <CardAction>
-          <ToggleGroup
-            type="single"
-            value={timeRange}
-            onValueChange={setTimeRange}
-            variant="outline"
-            className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex"
-          >
-            <ToggleGroupItem value="90d">Last 3 months</ToggleGroupItem>
-            <ToggleGroupItem value="30d">Last 30 days</ToggleGroupItem>
-            <ToggleGroupItem value="7d">Last 7 days</ToggleGroupItem>
-            <ToggleGroupItem value="1d">Last 24 hours</ToggleGroupItem>
-          </ToggleGroup>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger
-              className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
-              size="sm"
-              aria-label="Select a value"
-            >
-              <SelectValue placeholder="Last 3 months" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="90d" className="rounded-lg">
-                Last 3 months
-              </SelectItem>
-              <SelectItem value="30d" className="rounded-lg">
-                Last 30 days
-              </SelectItem>
-              <SelectItem value="7d" className="rounded-lg">
-                Last 7 days
-              </SelectItem>
-              <SelectItem value="1d" className="rounded-lg">
-                Last 24 hours
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <DateRangePicker onDateChange={handleDateChange} />
+            {dataSources.length > 1 && (
+              <Select value={selectedSource} onValueChange={setSelectedSource}>
+                <SelectTrigger className="w-auto">
+                  <SelectValue placeholder="Select data source" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Choose data source</SelectLabel>
+                    {dataSources.map((source) => (
+                      <SelectItem key={source.label} value={source.label}>
+                        {source.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            )}
+          </div>
         </CardAction>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
@@ -126,8 +135,8 @@ export function ChartAreaInteractive(props: ChartAreaInteractiveProps) {
           config={chartConfig}
           className="aspect-auto h-[250px] w-full"
         >
-          {filteredData && filteredData.length > 0 ? (
-            <AreaChart data={filteredData}>
+          {hasData ? (
+            <AreaChart className="ml-0 pl-0" data={filteredData}>
               <defs>
                 {uniqueKeys.map((key, index) => {
                   return (
@@ -177,7 +186,18 @@ export function ChartAreaInteractive(props: ChartAreaInteractiveProps) {
                   return formattedDate;
                 }}
               />
-              <YAxis domain={["auto", "auto"]} />
+              <YAxis
+                domain={["auto", "auto"]}
+                label={
+                  isMobile
+                    ? undefined
+                    : {
+                        value: selectedDataSource?.unit,
+                        angle: -90,
+                        position: "insideLeft",
+                      }
+                }
+              />
               <ChartTooltip
                 cursor
                 defaultIndex={isMobile ? -1 : 10}
@@ -191,7 +211,6 @@ export function ChartAreaInteractive(props: ChartAreaInteractiveProps) {
                         return date.toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",
-                          // year: "numeric",
                           hour: "2-digit",
                           minute: "2-digit",
                           second: "2-digit",
@@ -203,12 +222,11 @@ export function ChartAreaInteractive(props: ChartAreaInteractiveProps) {
                   />
                 }
               />
-
-              {uniqueKeys.map((key, index) => {
+              {uniqueKeys.map((key) => {
                 const color = chartConfig[key]?.color || "var(--default-color)";
                 return (
                   <Area
-                    key={crypto.randomUUID()}
+                    key={key}
                     dataKey={key}
                     type="monotone"
                     fill={`url(#gradient-${key})`}
@@ -223,11 +241,14 @@ export function ChartAreaInteractive(props: ChartAreaInteractiveProps) {
             </AreaChart>
           ) : (
             <div className="text-md *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card flex h-full items-center justify-center rounded-sm border-1 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs">
-              No data available
+              No data available. Choose a different date range.
             </div>
           )}
         </ChartContainer>
       </CardContent>
     </Card>
   );
-}
+};
+
+const MemoChartAreaInteractive = memo(ChartAreaInteractive);
+export default MemoChartAreaInteractive;
