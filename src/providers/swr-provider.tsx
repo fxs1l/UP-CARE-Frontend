@@ -35,7 +35,7 @@ async function fetcher(url: string): Promise<SensorDataPoint[]> {
 }
 
 const swrOptions = {
-  // refreshInterval: 3000,
+  refreshInterval: 60000,
   fetcher: fetcher,
 };
 
