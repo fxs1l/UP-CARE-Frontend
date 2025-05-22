@@ -30,8 +30,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { DateRangePicker } from "./date-picker";
 import { DateRange } from "react-day-picker";
+import { cn } from "../lib/utils";
+import useDateRangeStore from "@/hooks/use-date";
 
 type DataItem = {
   [key: string]: number;
@@ -49,18 +50,27 @@ type ChartAreaInteractiveProps = {
   chartConfig: ChartConfig;
   title: string;
   description?: string;
+  className?: string;
+  renderCard?: boolean;
 };
 
 const ChartAreaInteractive = (props: ChartAreaInteractiveProps) => {
-  const { dataSources, chartConfig, title, description = "" } = props;
+  const {
+    dataSources,
+    chartConfig,
+    title,
+    description = "",
+    className,
+    renderCard = true,
+  } = props;
   const isMobile = useIsMobile();
   const [selectedSource, setSelectedSource] = useState<string>(
     dataSources[0]?.label || "",
   );
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: new Date(),
-    to: new Date(),
-  });
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const { dateRange, setDateRange } = useDateRangeStore();
 
   const filterByDateRange = (
     data: DataItem[],
@@ -99,8 +109,124 @@ const ChartAreaInteractive = (props: ChartAreaInteractiveProps) => {
     ),
   );
 
-  return (
-    <Card className="@container/card">
+  const Chart = (
+    <ChartContainer
+      config={chartConfig}
+      className="aspect-auto h-[250px] w-full rounded-none"
+    >
+      {hasData ? (
+        <AreaChart data={filteredData}>
+          <defs>
+            {uniqueKeys.map((key, index) => {
+              return (
+                <linearGradient
+                  id={`gradient-${key}`}
+                  key={`gradient-${key}`}
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop
+                    offset="5%"
+                    stopColor={
+                      chartConfig[key]?.color || "var(--default-color)"
+                    }
+                    stopOpacity={0}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor={
+                      chartConfig[key]?.color || "var(--default-color)"
+                    }
+                    stopOpacity={0.1}
+                  />
+                </linearGradient>
+              );
+            })}
+          </defs>
+          <CartesianGrid vertical={true} />
+          <XAxis
+            dataKey="time"
+            scale="time"
+            type="number"
+            domain={["dataMin", "dataMax"]}
+            tickMargin={8}
+            minTickGap={50}
+            interval="preserveStartEnd"
+            tickFormatter={(value) => {
+              const date = new Date(value);
+              const formattedDate = date.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+              });
+
+              return formattedDate;
+            }}
+          />
+          <YAxis
+            domain={["auto", "auto"]}
+            label={
+              isMobile
+                ? undefined
+                : {
+                    value: selectedDataSource?.unit,
+                    angle: -90,
+                    position: "insideLeft",
+                  }
+            }
+          />
+          <ChartTooltip
+            cursor
+            content={
+              <ChartTooltipContent
+                labelClassName="font-mono"
+                labelFormatter={(_, payload) => {
+                  if (payload && payload.length > 0) {
+                    const timeValue = payload[0].payload.time;
+                    const date = new Date(timeValue);
+                    return date.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    });
+                  }
+                  return "";
+                }}
+                indicator="dot"
+              />
+            }
+          />
+          {uniqueKeys.map((key) => {
+            const color = chartConfig[key]?.color || "var(--default-color)";
+            return (
+              <Area
+                key={key}
+                dataKey={key}
+                type="monotone"
+                fill={`url(#gradient-${key})`}
+                fillOpacity={0.1}
+                stroke={color}
+                strokeWidth={2.5}
+                stackId="a"
+              />
+            );
+          })}
+          <ChartLegend content={<ChartLegendContent />} />
+        </AreaChart>
+      ) : (
+        <div className="text-md bg-accent flex h-full items-center justify-center rounded-sm border-1 text-center">
+          No data available. Choose a different date range.
+        </div>
+      )}
+    </ChartContainer>
+  );
+
+  const CardWithChart = (
+    <Card className={cn("@container/card", className)}>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         <CardDescription>
@@ -109,10 +235,6 @@ const ChartAreaInteractive = (props: ChartAreaInteractiveProps) => {
         </CardDescription>
         <CardAction>
           <div className="flex flex-wrap items-center justify-end gap-2">
-            <DateRangePicker
-              onDateChange={handleDateChange}
-              className="w-full sm:w-auto"
-            />
             {dataSources.length > 1 && (
               <Select value={selectedSource} onValueChange={setSelectedSource}>
                 <SelectTrigger className="w-auto">
@@ -133,123 +255,14 @@ const ChartAreaInteractive = (props: ChartAreaInteractiveProps) => {
           </div>
         </CardAction>
       </CardHeader>
-      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        <ChartContainer
-          config={chartConfig}
-          className="aspect-auto h-[250px] w-full"
-        >
-          {hasData ? (
-            <AreaChart data={filteredData}>
-              <defs>
-                {uniqueKeys.map((key, index) => {
-                  return (
-                    <linearGradient
-                      id={`gradient-${key}`}
-                      key={`gradient-${key}`}
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="5%"
-                        stopColor={
-                          chartConfig[key]?.color || "var(--default-color)"
-                        }
-                        stopOpacity={0}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor={
-                          chartConfig[key]?.color || "var(--default-color)"
-                        }
-                        stopOpacity={0.1}
-                      />
-                    </linearGradient>
-                  );
-                })}
-              </defs>
-              <CartesianGrid vertical={true} />
-              <XAxis
-                dataKey="time"
-                scale="time"
-                type="number"
-                domain={["dataMin", "dataMax"]}
-                tickMargin={8}
-                minTickGap={50}
-                interval="preserveStartEnd"
-                tickFormatter={(value) => {
-                  const date = new Date(value);
-                  const formattedDate = date.toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    hour: "2-digit",
-                  });
-
-                  return formattedDate;
-                }}
-              />
-              <YAxis
-                domain={["auto", "auto"]}
-                label={
-                  isMobile
-                    ? undefined
-                    : {
-                        value: selectedDataSource?.unit,
-                        angle: -90,
-                        position: "insideLeft",
-                      }
-                }
-              />
-              <ChartTooltip
-                cursor
-                content={
-                  <ChartTooltipContent
-                    labelClassName="font-mono"
-                    labelFormatter={(_, payload) => {
-                      if (payload && payload.length > 0) {
-                        const timeValue = payload[0].payload.time;
-                        const date = new Date(timeValue);
-                        return date.toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          second: "2-digit",
-                        });
-                      }
-                      return "";
-                    }}
-                    indicator="dot"
-                  />
-                }
-              />
-              {uniqueKeys.map((key) => {
-                const color = chartConfig[key]?.color || "var(--default-color)";
-                return (
-                  <Area
-                    key={key}
-                    dataKey={key}
-                    type="monotone"
-                    fill={`url(#gradient-${key})`}
-                    fillOpacity={0.1}
-                    stroke={color}
-                    strokeWidth={2.5}
-                    stackId="a"
-                  />
-                );
-              })}
-              <ChartLegend content={<ChartLegendContent />} />
-            </AreaChart>
-          ) : (
-            <div className="text-md bg-accent flex h-full items-center justify-center rounded-sm border-1 text-center">
-              No data available. Choose a different date range.
-            </div>
-          )}
-        </ChartContainer>
-      </CardContent>
+      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">{Chart}</CardContent>
     </Card>
   );
+
+  if (renderCard) {
+    return CardWithChart;
+  }
+  return Chart;
 };
 
 const MemoChartAreaInteractive = memo(ChartAreaInteractive);

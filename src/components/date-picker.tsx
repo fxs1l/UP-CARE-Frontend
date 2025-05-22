@@ -13,6 +13,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import useDateRangeStore from "@/hooks/use-date";
 
 interface DateRangePreset {
   label: string;
@@ -26,24 +27,38 @@ interface DateRangePickerProps extends React.HTMLAttributes<HTMLDivElement> {
   numberOfMonths?: 1 | 2 | 3 | 4 | 5 | 6;
   presets?: DateRangePreset[];
   onDateChange?: (date: DateRange | undefined) => void;
+  buttonVariant?:
+    | "link"
+    | "default"
+    | "destructive"
+    | "outline"
+    | "secondary"
+    | "ghost";
 }
 
 export function DateRangePicker(props: DateRangePickerProps) {
-  const { numberOfMonths = 1, presets, className, onDateChange } = props;
+  const {
+    numberOfMonths = 1,
+    presets,
+    className,
+    onDateChange,
+    buttonVariant = "outline",
+  } = props;
 
-  const [date, setDate] = React.useState<DateRange | undefined>();
+  // const [date, setDate] = React.useState<DateRange | undefined>();
+  const { dateRange, setDateRange } = useDateRangeStore();
 
   const handlePresetSelect = (preset: DateRangePreset) => {
     const newDate = {
       from: preset.range.from,
       to: preset.range.to,
     };
-    setDate(newDate);
+    setDateRange(newDate);
     onDateChange?.(newDate);
   };
 
   const handleDateSelect = (range: DateRange | undefined) => {
-    setDate(range);
+    setDateRange(range);
     onDateChange?.(range);
   };
 
@@ -64,21 +79,21 @@ export function DateRangePicker(props: DateRangePickerProps) {
     {
       label: "Yesterday",
       range: {
-        from: subDays(new Date(), 1),
-        to: subDays(new Date(), 1),
+        from: normalizeDate(subDays(new Date(), 1)),
+        to: new Date(),
       },
     },
     {
       label: "Last 7 Days",
       range: {
-        from: subDays(new Date(), 6),
+        from: normalizeDate(subDays(new Date(), 6)),
         to: new Date(),
       },
     },
     {
       label: "Last 30 Days",
       range: {
-        from: subDays(new Date(), 29),
+        from: normalizeDate(subDays(new Date(), 29)),
         to: new Date(),
       },
     },
@@ -111,21 +126,21 @@ export function DateRangePicker(props: DateRangePickerProps) {
       <Popover>
         <PopoverTrigger asChild>
           <Button
-            variant={"outline"}
+            variant={buttonVariant}
             className={cn(
               "max-w-full justify-start text-left font-normal",
-              !date && "text-muted-foreground",
+              !dateRange && "text-muted-foreground",
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {date?.from ? (
-              date.to ? (
+            {dateRange?.from ? (
+              dateRange.to ? (
                 <>
-                  {format(date.from, "LLL dd, y")} -{" "}
-                  {format(date.to, "LLL dd, y")}
+                  {format(dateRange.from, "LLL dd, y")} -{" "}
+                  {format(dateRange.to, "LLL dd, y")}
                 </>
               ) : (
-                format(date.from, "LLL dd, y ")
+                format(dateRange.from, "LLL dd, y ")
               )
             ) : (
               <span>Pick a date</span>
@@ -141,8 +156,8 @@ export function DateRangePicker(props: DateRangePickerProps) {
           <Calendar
             initialFocus
             mode="range"
-            defaultMonth={date?.from}
-            selected={date}
+            defaultMonth={dateRange?.from}
+            selected={dateRange}
             onSelect={handleDateSelect}
             disabled={(date) => date > new Date()}
             numberOfMonths={numberOfMonths}
@@ -155,11 +170,13 @@ export function DateRangePicker(props: DateRangePickerProps) {
               {allPresets.map((preset) => (
                 <Button
                   variant={
-                    date
+                    dateRange
                       ? normalizeDate(preset.range.from).getTime() ===
-                          normalizeDate(date?.from ?? new Date()).getTime() &&
+                          normalizeDate(
+                            dateRange?.from ?? new Date(),
+                          ).getTime() &&
                         normalizeDate(preset.range.to!).getTime() ===
-                          normalizeDate(date?.to ?? new Date()).getTime()
+                          normalizeDate(dateRange?.to ?? new Date()).getTime()
                         ? "default"
                         : "outline"
                       : "outline"

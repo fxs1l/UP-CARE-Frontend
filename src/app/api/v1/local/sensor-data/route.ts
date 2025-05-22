@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { flux, fluxDuration, HttpError } from '@influxdata/influxdb-client'
 import influxQueryApi from '@/database/influxdb'
 import { influxBucket } from '@/lib/database/config'
-import SensorDataPoint from '@/lib/interfaces/sensor-data-point'
+import SensorDataPoint from '@/interfaces/sensor-data-point'
 import { subDays } from 'date-fns'
 
 export async function GET(request: Request) {
@@ -10,10 +10,12 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url)
 
-    const defaultStartTime = subDays(new Date(), 90).toISOString(); // 90 days ago
+    const defaultStartTime = subDays(new Date(), 7).toISOString(); // 90 days ago
     const defaultStopTime = new Date().toISOString(); // now
-    const startTime = searchParams.get('startTime') || defaultStartTime;
-    const stopTime = searchParams.get('stopTime') || defaultStopTime;
+    const startTimeParam = searchParams.get('startTime');
+    const startTime = startTimeParam ? new Date(startTimeParam).toISOString() : defaultStartTime;
+    const stopTimeParam = searchParams.get('stopTime');
+    const stopTime = stopTimeParam ? new Date(stopTimeParam).toISOString() : defaultStopTime;
     const range = flux`|> range(start: time(v: ${startTime}), stop: time(v: ${stopTime}))`
 
     const parameter = searchParams.get('parameter')
@@ -32,6 +34,7 @@ export async function GET(request: Request) {
     ${parameter ? parameterFilter : ''}`
 
     const rows = await influxQueryApi.collectRows(fluxQuery)
+    // console.log('rows', rows)
     const points: SensorDataPoint[] = rows.map((row) => {
       const dataPoint = row as Record<string, never>;
       return {

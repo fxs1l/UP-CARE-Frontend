@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { DateRangePicker } from "./date-picker";
 
 export function SiteHeader() {
   return (
@@ -13,16 +14,10 @@ export function SiteHeader() {
         />
         <h1 className="text-base font-medium">Dashboard</h1>
         <div className="ml-auto flex items-center gap-2">
-          <Button variant="ghost" asChild size="sm" className="hidden sm:flex">
-            <a
-              href="https://github.com/shadcn-ui/ui/tree/main/apps/v4/app/(examples)/dashboard"
-              rel="noopener noreferrer"
-              target="_blank"
-              className="dark:text-foreground"
-            >
-              {/* GitHub */}
-            </a>
-          </Button>
+          {/* <Button variant="ghost" size="sm" className="hidden sm:flex">
+            Live
+          </Button> */}
+          <DateRangePicker buttonVariant="ghost" />
         </div>
       </div>
     </header>
