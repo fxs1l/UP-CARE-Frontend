@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 async function fetcher(url: string): Promise<SensorDataPoint[]> {
   const urlObj = new URL(url, window.location.origin);
-  const parameter = urlObj.searchParams.get("parameter") || "unknown";
+  const parameter = urlObj.searchParams.get("parameter") || "traffic-count";
 
   const fetchPromise = fetch(url).then(async (response) => {
     return response.json();
