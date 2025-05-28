@@ -10,15 +10,31 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url)
 
-    const defaultStartTime = subDays(new Date(), 7).toISOString(); // 7 days ago
+    const defaultStartTime = subDays(new Date(), 1).toISOString(); // 1 week ago
     const defaultStopTime = new Date().toISOString(); // now
     const startTimeParam = searchParams.get('startTime');
     const startTime = startTimeParam ? new Date(startTimeParam).toISOString() : defaultStartTime;
     const stopTimeParam = searchParams.get('stopTime');
     const stopTime = stopTimeParam ? new Date(stopTimeParam).toISOString() : defaultStopTime;
-    const range = flux`|> range(start: time(v: ${startTime}), stop: time(v: ${stopTime}))`
+    const source = searchParams.get('source')
+    const parameter = searchParams.get('pollutant') || searchParams.get('parameter')
+    const bucketSizeParam = searchParams.get('bucketSize');
 
-    const parameter = searchParams.get('parameter')
+    // Calculate time difference in milliseconds to automatically determine bucketSize
+    const diffMs = new Date(stopTime).getTime() - new Date(startTime).getTime();
+    let defaultBucketSize: string;
+    if (diffMs < 60 * 60 * 1000) { // less than 1 hour
+      defaultBucketSize = '1m';
+    } else if (diffMs < 30 * 24 * 60 * 60 * 1000) { // less than 1 month (30 days)
+      defaultBucketSize = '1h';
+    } else if (diffMs < 365 * 24 * 60 * 60 * 1000) { // less than 1 year
+      defaultBucketSize = '1d';
+    } else {
+      defaultBucketSize = '1w'; // default for longer ranges
+    }
+    const bucketSize = bucketSizeParam ? bucketSizeParam : defaultBucketSize;
+    const aggregateWindow = flux`|> aggregateWindow(every: ${fluxDuration(bucketSize)}, fn: mean, createEmpty: false)`
+    const range = flux`|> range(start: time(v: ${startTime}), stop: time(v: ${stopTime}))`
 
     const fluxQuery = flux`from(bucket:${influxBucket})
     ${range}
@@ -38,15 +54,15 @@ export async function GET(request: Request) {
         vehicle_type: r.vehicle_type,
         _measurement: "traffic_summary"
     }))
+    ${aggregateWindow}
     `
-
     const rows = await influxQueryApi.collectRows(fluxQuery)
     const points: TrafficDataPoint[] = rows.map((row) => {
       const dataPoint = row as Record<string, never>;
       return {
         time: Date.parse(dataPoint._time),
         source: "Vehicle Count",
-        value: dataPoint._value,
+        value: Math.ceil(dataPoint._value),
         vehicleType: dataPoint.vehicle_type,
       } as TrafficDataPoint;
     });
