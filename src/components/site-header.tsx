@@ -17,7 +17,7 @@ export function SiteHeader() {
           {/* <Button variant="ghost" size="sm" className="hidden sm:flex">
             Live
           </Button> */}
-          <DateRangePicker buttonVariant="ghost" />
+          <DateRangePicker buttonVariant="outline" />
         </div>
       </div>
     </header>

@@ -4,89 +4,33 @@ import { useMemo } from "react";
 import useSWR from "swr";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
-import MemoChartAreaInteractive from "@/components/chart-area-interactive";
+import MemoChartAreaInteractive from "@/components/chart-area-interactive-old";
 import MapComponent from "@/components/building-map";
 import SensorDataPoint from "@/interfaces/sensor-data-point";
 import DataItem from "@/interfaces/chart-data";
+import TrafficDataPoint from "@/interfaces/traffic-data-point";
+
+import { useAllSensorData, useSensorData } from "@/hooks/use-sensor-data";
+import { useTrafficData } from "@/hooks/use-traffic-data";
 import useDateRangeStore from "@/hooks/use-date";
+import { error } from "console";
+import usePollutantStore from "../hooks/use-pollutant";
 
 export default function DashboardPage() {
   const { dateRange } = useDateRangeStore();
-  const {
-    data: dataCO,
-    error: errorCO,
-    isLoading: isLoadingCO,
-  } = useSWR(
-    `/api/v1/local/sensor-data?parameter=CO&startTime=${dateRange.from?.toISOString()}&endTime=${dateRange.to?.toISOString()}`,
-  );
-  const {
-    data: dataCO2,
-    error: errorCO2,
-    isLoading: isLoadingCO2,
-  } = useSWR(
-    `/api/v1/local/sensor-data?parameter=CO2&startTime=${dateRange.from?.toISOString()}&endTime=${dateRange.to?.toISOString()}`,
-  );
 
-  const {
-    data: dataNO2,
-    error: errorNO2,
-    isLoading: isLoadingNO2,
-  } = useSWR(
-    `/api/v1/local/sensor-data?parameter=NO2&startTime=${dateRange.from?.toISOString()}&endTime=${dateRange.to?.toISOString()}`,
-  );
-
-  const {
-    data: dataSO2,
-    error: errorSO2,
-    isLoading: isLoadingSO2,
-  } = useSWR(
-    `/api/v1/local/sensor-data?parameter=SO2&startTime=${dateRange.from?.toISOString()}&endTime=${dateRange.to?.toISOString()}`,
-  );
-
-  const {
-    data: dataPM10,
-    error: errorPM10,
-    isLoading: isLoadingPM10,
-  } = useSWR(
-    `/api/v1/local/sensor-data?parameter=PM10&startTime=${dateRange.from?.toISOString()}&endTime=${dateRange.to?.toISOString()}`,
-  );
-
-  const {
-    data: dataPM25,
-    error: errorPM25,
-    isLoading: isLoadingPM25,
-  } = useSWR(
-    `/api/v1/local/sensor-data?parameter=PM25&startTime=${dateRange.from?.toISOString()}&endTime=${dateRange.to?.toISOString()}`,
-  );
-  const {
-    data: dataTrafficCount,
-    isLoading: isLoadingTrafficCount,
-    error: errorTrafficCount,
-  } = useSWR(
-    `api/v1/local/traffic-data/count?&startTime=${dateRange.from?.toISOString()}&endTime=${dateRange.to?.toISOString()}`,
-  );
-
-  const { data: meanCO, isLoading: isLoadingMeanCO } = useSWR(
-    `/api/v1/local/sensor-data/mean?parameter=CO&startTime=${dateRange.from?.toISOString()}&endTime=${dateRange.to?.toISOString()}`,
-  );
-  const { data: meanCO2, isLoading: isLoadingMeanCO2 } = useSWR(
-    `/api/v1/local/sensor-data/mean?parameter=CO2&startTime=${dateRange.from?.toISOString()}&endTime=${dateRange.to?.toISOString()}`,
-  );
-  const { data: meanNO2, isLoading: isLoadingMeanNO2 } = useSWR(
-    `/api/v1/local/sensor-data/mean?parameter=NO2&startTime=${dateRange.from?.toISOString()}&endTime=${dateRange.to?.toISOString()}`,
-  );
-  const { data: meanSO2, isLoading: isLoadingMeanSO2 } = useSWR(
-    `/api/v1/local/sensor-data/mean?parameter=SO2&startTime=${dateRange.from?.toISOString()}&endTime=${dateRange.to?.toISOString()}`,
-  );
-  const { data: meanPM10, isLoading: isLoadingMeanPM10 } = useSWR(
-    `/api/v1/local/sensor-data/mean?parameter=PM10&startTime=${dateRange.from?.toISOString()}&endTime=${dateRange.to?.toISOString()}`,
-  );
-  const { data: meanPM25, isLoading: isLoadingMeanPM25 } = useSWR(
-    `/api/v1/local/sensor-data/mean?parameter=PM25&startTime=${dateRange.from?.toISOString()}&endTime=${dateRange.to?.toISOString()}`,
+  const sensorData = useAllSensorData(dateRange);
+  const trafficData = useTrafficData(dateRange);
+  const { pollutant } = usePollutantStore();
+  const specificPollutantData = useSensorData(
+    pollutant,
+    "raw",
+    dateRange,
+    "1h",
   );
 
   const chartConfig = {
-    value: {
+    mean: {
       label: "Mean",
       color: "var(--chart-1)",
     },
@@ -110,37 +54,34 @@ export default function DashboardPage() {
       label: "Vehicle Count",
       color: "var(--chart-5)",
     },
+    car: {
+      label: "Car",
+      color: "var(--chart-1)",
+    },
+    bus: {
+      label: "Jeep",
+      color: "var(--chart-2)",
+    },
+    truck: {
+      label: "Truck",
+      color: "var(--chart-3)",
+    },
+    motorcycle: {
+      label: "Motorcycle",
+      color: "var(--chart-4)",
+    },
   };
 
-  const transformSensorData = (data: SensorDataPoint[]): DataItem[] => {
-    const excludedTime = new Date("2025-04-19").getTime();
-    return data
-      ?.filter((item) => item.time !== excludedTime)
-      ?.map((item) => ({
-        [item.source]: item.value,
-        time: item.time,
-      })) as DataItem[];
+  const transformTrafficData = (data: TrafficDataPoint[]): DataItem[] => {
+    return data?.map((item) => ({
+      [String(item.vehicleType)]: item.value,
+      time: item.time,
+    })) as DataItem[];
   };
 
-  const transformTrafficData = (data: SensorDataPoint[]): DataItem[] => {
-    const excludedTime = new Date("2025-04-19").getTime();
-    return data
-      ?.filter((item) => item.time !== excludedTime)
-      ?.map((item) => ({
-        [item.source]: item.value,
-        time: item.time,
-      })) as DataItem[];
-  };
-
-  const CO = useMemo(() => transformSensorData(dataCO ?? []), [dataCO]);
-  const CO2 = useMemo(() => transformSensorData(dataCO2 ?? []), [dataCO2]);
-  const NO2 = useMemo(() => transformSensorData(dataNO2 ?? []), [dataNO2]);
-  const SO2 = useMemo(() => transformSensorData(dataSO2 ?? []), [dataSO2]);
-  const PM10 = useMemo(() => transformSensorData(dataPM10 ?? []), [dataPM10]);
-  const PM25 = useMemo(() => transformSensorData(dataPM25 ?? []), [dataPM25]);
   const trafficCount = useMemo(
-    () => transformTrafficData(dataTrafficCount ?? []),
-    [dataTrafficCount],
+    () => transformTrafficData(trafficData.data ?? []),
+    [trafficData.data],
   );
 
   const charts = [
@@ -148,62 +89,69 @@ export default function DashboardPage() {
       title: "Carbon Monoxide (CO)",
       description: "Total from all nodes for the last 3 months",
       dataSources: [
-        { label: "Mean", data: meanCO },
-        { label: "Overlay", data: CO },
+        { label: "Mean", data: sensorData.CO.mean.data },
+        { label: "Overlay", data: sensorData.CO.raw.data ?? [] },
       ],
-      isLoading: isLoadingCO && isLoadingMeanCO,
-      error: errorCO,
+      isLoading: sensorData.CO.mean.isLoading && sensorData.CO.raw.isLoading,
+      error: sensorData.CO.raw.error || sensorData.CO.mean.error,
       unit: "ppm",
     },
     {
       title: "Carbon Dioxide (CO2)",
       description: "Total from all nodes for the last 3 months",
       dataSources: [
-        { label: "Mean", data: meanCO2 },
-        { label: "Overlay", data: CO2 },
+        { label: "Mean", data: sensorData.CO2.mean.data },
+        { label: "Overlay", data: sensorData.CO2.raw.data },
       ],
-      isLoading: isLoadingCO2 || isLoadingMeanCO2,
-      error: errorCO2,
+      isLoading: sensorData.CO2.raw.isLoading && sensorData.CO2.mean.isLoading,
+      error: sensorData.CO2.raw.error || sensorData.CO2.mean.error,
+      unit: "ppm",
     },
     {
       title: "Nitrogen Dioxide (NO2)",
       description: "Total from all nodes for the last 3 months",
       dataSources: [
-        { label: "Mean", data: meanNO2 },
-        { label: "Overlay", data: NO2 },
+        { label: "Mean", data: sensorData.NO2.mean.data },
+        { label: "Overlay", data: sensorData.NO2.raw.data },
       ],
-      isLoading: isLoadingNO2 || isLoadingMeanNO2,
-      error: errorNO2,
+      isLoading: sensorData.NO2.raw.isLoading && sensorData.NO2.mean.isLoading,
+      error: sensorData.NO2.raw.error || sensorData.NO2.mean.error,
+      unit: "ppm",
     },
     {
       title: "Sulfur Dioxide (SO2)",
       description: "Total from all nodes for the last 3 months",
       dataSources: [
-        { label: "Mean", data: meanSO2 },
-        { label: "Overlay", data: SO2 },
+        { label: "Mean", data: sensorData.SO2.mean.data },
+        { label: "Overlay", data: sensorData.SO2.raw.data },
       ],
-      isLoading: isLoadingSO2 || isLoadingMeanSO2,
-      error: errorSO2,
+      isLoading: sensorData.SO2.raw.isLoading && sensorData.SO2.mean.isLoading,
+      error: sensorData.SO2.raw.error || sensorData.SO2.mean.error,
+      unit: "ppm",
     },
     {
       title: "Particulate Matter 10 (PM10)",
       description: "Total from all nodes for the last 3 months",
       dataSources: [
-        { label: "Mean", data: meanPM10 },
-        { label: "Overlay", data: PM10 },
+        { label: "Mean", data: sensorData.PM10.mean.data },
+        { label: "Overlay", data: sensorData.PM10.raw.data },
       ],
-      isLoading: isLoadingPM10 || isLoadingMeanPM10,
-      error: errorPM10,
+      isLoading:
+        sensorData.PM10.raw.isLoading && sensorData.PM10.mean.isLoading,
+      error: sensorData.PM10.raw.error || sensorData.PM10.mean.error,
+      unit: "µg/m³",
     },
     {
-      title: "Particulate Matter 2.5 (PM25)",
+      title: "Particulate Matter 2.5 (PM2.5)",
       description: "Total from all nodes for the last 3 months",
       dataSources: [
-        { label: "Mean", data: meanPM25 },
-        { label: "Overlay", data: PM25 },
+        { label: "Mean", data: sensorData.PM25.mean.data },
+        { label: "Overlay", data: sensorData.PM25.raw.data },
       ],
-      isLoading: isLoadingPM25 || isLoadingMeanPM25,
-      error: errorPM25,
+      isLoading:
+        sensorData.PM25.raw.isLoading && sensorData.PM25.mean.isLoading,
+      error: sensorData.PM25.raw.error || sensorData.PM25.mean.error,
+      unit: "µg/m³",
     },
   ];
 
@@ -212,12 +160,11 @@ export default function DashboardPage() {
       <Card className="mb-6">
         <CardContent className="flex w-full flex-col items-center gap-1 p-2 sm:flex-row">
           <div className="flex h-full w-full flex-col rounded-t-md rounded-b-none sm:w-full sm:rounded-l-md sm:rounded-r-none">
-            {/* <MapComponent className="rounded-t-md rounded-b-none sm:rounded-l-md sm:rounded-r-none" /> */}
             <span className="p-2 pt-0 pb-0 leading-none font-semibold">
               Simulations
             </span>
             <span className="text-muted-foreground p-2 pt-0 text-sm">
-              Simulated concentrations of NOx in the area from EnviMET
+              Simulated concentrations from EnviMET
             </span>
             <MapComponent />
           </div>
@@ -226,24 +173,32 @@ export default function DashboardPage() {
               Vehicle Count
             </span>
             <span className="text-muted-foreground p-2 pt-0 text-sm">
-              Vehicle count over time
+              Mean vehicles seen by the traffic camera
             </span>
             <MemoChartAreaInteractive
               className="rounded-tr-md border-none shadow-none"
               dataSources={[
                 { label: "Vehicle Count", data: trafficCount },
-                { label: "Overlay", data: CO },
+                // { label: "Overlay", data: CO },
               ]}
               title={"Vehicle Count over Time"}
               renderCard={false}
               chartConfig={chartConfig}
             />
-            <span className="self-start p-2 leading-none font-semibold">
-              NOx Concentration
+            <span className="self-start p-2 pb-0 leading-none font-semibold">
+              Concentrations {pollutant ? `(${pollutant})` : ""}
+            </span>
+            <span className="text-muted-foreground p-2 pt-0 text-sm">
+              Sensor data from the AQ nodes
             </span>
             <MemoChartAreaInteractive
               className="rounded-tr-md border-none shadow-none"
-              dataSources={[{ label: "", data: meanNO2 }]}
+              dataSources={[
+                {
+                  label: "",
+                  data: pollutant === "" ? [] : specificPollutantData.data,
+                },
+              ]}
               title={"Vehicle Count over Time"}
               renderCard={false}
               chartConfig={chartConfig}
@@ -251,6 +206,7 @@ export default function DashboardPage() {
           </div>
         </CardContent>
       </Card>
+
       {charts.map((chart, index) => (
         <div key={index} className="mb-6">
           {chart.isLoading || chart.error ? (
@@ -261,6 +217,7 @@ export default function DashboardPage() {
               title={chart.title}
               description={chart.description}
               chartConfig={chartConfig}
+              yAxisLabel={chart.unit}
             />
           )}
         </div>

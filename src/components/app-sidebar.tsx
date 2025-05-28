@@ -36,7 +36,7 @@ const data = {
   user: {
     name: "asil",
     email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    // avatar: "/avatars/shadcn.jpg",
   },
   navMain: [
     {
@@ -44,16 +44,16 @@ const data = {
       url: "#",
       icon: IconHome,
     },
-    {
-      title: "Charts",
-      url: "#",
-      icon: IconChartArea,
-    },
-    {
-      title: "Visualize",
-      url: "#",
-      icon: IconMap,
-    },
+    // {
+    //   title: "Charts",
+    //   url: "#",
+    //   icon: IconChartArea,
+    // },
+    // {
+    //   title: "Visualize",
+    //   url: "#",
+    //   icon: IconMap,
+    // },
     // {
     //   title: "Projects",
     //   url: "#",
@@ -114,11 +114,11 @@ const data = {
   //   },
   // ],
   navSecondary: [
-    {
-      title: "Settings",
-      url: "#",
-      icon: IconSettings,
-    },
+    // {
+    //   title: "Settings",
+    //   url: "#",
+    //   icon: IconSettings,
+    // },
     {
       title: "About",
       url: "#",
@@ -222,14 +222,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavDocuments items={data.sensors} label="Air Quality" />
-        <NavDocuments items={data.traffic} label="Traffic" />
+        {/* <NavDocuments items={data.sensors} label="Air Quality" /> */}
+        {/* <NavDocuments items={data.traffic} label="Traffic" /> */}
 
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
-      </SidebarFooter>
+      <SidebarFooter>{/* <NavUser user={data.user} /> */}</SidebarFooter>
     </Sidebar>
   );
 }
